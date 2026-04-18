@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Organic Drug S">
+<meta name="theme-color" content="#0f1117" id="themeColor">
+<title>Organic Drug Substances</title>
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:#0f1117; --s1:#1a1d27; --s2:#242736; --bd:#2e3248;
+  --tx:#e8eaf6; --tx2:#8b92b8; --tx3:#4a5280;
+  --ac:#6c8ef5; --ac2:#a78bfa;
+  --gr:#4ade80; --rd:#f87171; --yw:#fbbf24;
+  --card-shadow: 0 8px 32px rgba(0,0,0,.5);
+  --radius:20px;
+}
+.light {
+  --bg:#f0f2f8; --s1:#ffffff; --s2:#e8ecf5; --bd:#d0d6e8;
+  --tx:#1a1d2e; --tx2:#5a6080; --tx3:#9aa0c0;
+  --card-shadow: 0 8px 32px rgba(0,0,0,.12);
+}
+
+/* ── RESET ── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
+  font-family:-apple-system,'SF Pro Display','Segoe UI',sans-serif;
+  transition:background .25s,color .25s;}
+
+/* ── APP SHELL ── */
+.app{display:flex;flex-direction:column;height:100%;height:100dvh;}
+
+/* ── TOPBAR ── */
+.top{
+  background:var(--s1);border-bottom:1px solid var(--bd);
+  padding:env(safe-area-inset-top,0) 12px 0;flex-shrink:0;
+  transition:background .25s,border-color .25s;
+}
+.top-row{display:flex;align-items:center;gap:8px;padding:9px 0;flex-wrap:wrap;}
+.app-label{display:flex;flex-direction:column;gap:1px;flex-shrink:0;}
+.app-label b{font-size:14px;font-weight:800;color:var(--ac);}
+.app-label span{font-size:9px;color:var(--tx2);letter-spacing:.3px;}
+
+/* Mode toggle (Name→Struct / Struct→Name) */
+.mode-switch{
+  display:flex;background:var(--s2);border:1px solid var(--bd);
+  border-radius:10px;padding:3px;gap:3px;flex-shrink:0;
+  transition:background .25s;
+}
+.mode-btn{
+  padding:5px 10px;border-radius:7px;border:none;
+  background:transparent;color:var(--tx2);font-size:11px;font-weight:600;
+  cursor:pointer;white-space:nowrap;transition:all .15s;
+}
+.mode-btn.on{background:var(--ac);color:#fff;}
+
+/* Right controls */
+.top-right{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;}
+.icon-btn{
+  width:32px;height:32px;border-radius:9px;border:1px solid var(--bd);
+  background:transparent;color:var(--tx2);font-size:15px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.icon-btn:active{background:var(--s2);}
+.stat{font-size:11px;color:var(--tx2);white-space:nowrap;}
+.stat b{color:var(--tx);}
+
+/* Category filter */
+.cat-row{padding:0 0 9px;display:flex;gap:6px;align-items:center;}
+.cat-row select{
+  flex:1;background:var(--s2);border:1px solid var(--bd);color:var(--tx);
+  padding:6px 10px;border-radius:10px;font-size:12px;
+  -webkit-appearance:none;appearance:none;cursor:pointer;
+  transition:background .25s,color .25s;
+}
+
+/* ── PROGRESS ── */
+.prog{height:2px;background:var(--s2);flex-shrink:0;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));transition:width .3s;}
+
+/* ── CONTENT ── */
+.content{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:14px 12px 6px;gap:12px;overflow:hidden;
+}
+
+/* ── CARD ── */
+.scene{
+  perspective:1000px;width:100%;max-width:600px;
+  flex:1;max-height:420px;cursor:pointer;
+}
+.card{
+  width:100%;height:100%;position:relative;
+  transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.4,0,.2,1);
+}
+.card.flipped{transform:rotateY(180deg);}
+.face{
+  position:absolute;inset:0;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:var(--radius);border:1px solid var(--bd);overflow:hidden;
+  transition:background .25s,border-color .25s;
+}
+
+/* Front face */
+.front{
+  background:var(--s1);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;gap:10px;box-shadow:var(--card-shadow);
+}
+.front-meta{
+  position:absolute;top:12px;left:0;right:0;
+  display:flex;justify-content:space-between;padding:0 14px;
+  font-size:10px;color:var(--tx2);
+}
+.cat-pill{
+  background:rgba(108,142,245,.12);border:1px solid rgba(108,142,245,.2);
+  border-radius:20px;padding:2px 9px;color:var(--ac);
+  font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.front-icon{font-size:26px;opacity:.3;}
+.front-text{
+  font-size:clamp(16px,4vw,26px);font-weight:800;
+  text-align:center;line-height:1.35;color:var(--tx);max-width:90%;
+}
+/* When front shows image */
+.front-img{
+  max-width:88%;max-height:68%;object-fit:contain;
+  border-radius:4px;display:none;
+}
+.front.img-mode .front-icon{display:none;}
+.front.img-mode .front-text{display:none;}
+.front.img-mode .front-img{display:block;}
+.tap-hint{position:absolute;bottom:12px;font-size:10px;color:var(--tx3);}
+
+/* Back face */
+.back{
+  background:var(--s2);transform:rotateY(180deg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px;gap:10px;box-shadow:var(--card-shadow);
+}
+.back-img{max-width:88%;max-height:55%;object-fit:contain;border-radius:4px;display:none;}
+.back-spin{
+  width:60px;height:60px;border-radius:50%;
+  border:3px solid var(--bd);border-top-color:var(--ac);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.back-name{font-size:15px;font-weight:700;color:var(--tx);text-align:center;line-height:1.4;}
+.back-cat{
+  font-size:11px;color:var(--ac2);text-align:center;
+  background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);
+  border-radius:20px;padding:3px 12px;
+}
+/* When back shows name (struct→name mode) */
+.back.name-mode .back-img{display:none!important;}
+.back.name-mode .back-spin{display:none!important;}
+.back-hint{position:absolute;bottom:12px;font-size:10px;color:var(--tx3);}
+
+/* ── BUTTONS ── */
+.btns{display:flex;gap:10px;align-items:center;width:100%;max-width:420px;}
+.btn{
+  flex:1;padding:13px 8px;border-radius:14px;border:none;
+  font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.btn:active{transform:scale(.94);}
+.btn-no{background:var(--rd);color:#fff;}
+.btn-yes{background:var(--gr);color:#0a1a0a;}
+.btn-flip{
+  flex:0 0 auto;width:52px;height:52px;border-radius:14px;
+  background:var(--s2);color:var(--tx);border:1.5px solid var(--bd);font-size:18px;
+  transition:background .25s;
+}
+.nav{display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom,8px);}
+.btn-nav{
+  background:transparent;border:1px solid var(--bd);color:var(--tx2);
+  border-radius:10px;padding:7px 18px;font-size:12px;cursor:pointer;
+  transition:background .25s,color .25s,border-color .25s;
+}
+.btn-nav:active{background:var(--s2);}
+
+/* ── RESULT OVERLAY ── */
+.result{
+  display:none;position:absolute;inset:0;
+  background:var(--bg);flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;
+  text-align:center;padding:32px;
+  transition:background .25s;
+}
+.result.show{display:flex;}
+.result h2{font-size:22px;font-weight:900;}
+.ring{
+  width:90px;height:90px;border-radius:50%;
+  border:5px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:900;
+}
+.res-row{display:flex;gap:28px;}
+.res-col{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.res-col .n{font-size:28px;font-weight:900;}
+.res-col .l{font-size:10px;color:var(--tx2);}
+.res-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.btn-res{
+  padding:10px 22px;border-radius:12px;border:1px solid var(--bd);
+  font-size:13px;font-weight:700;cursor:pointer;background:var(--s2);color:var(--tx);
+  transition:background .25s;
+}
+.btn-res.red{background:var(--rd);color:#fff;border-color:var(--rd);}
+
+/* light mode image invert */
+body:not(.light) img.struct { filter:invert(1) hue-rotate(180deg); }
+body.light img.struct { filter:none; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="top">
+    <div class="top-row">
+      <div class="app-label">
+        <b>💊 Organic Drug Substances</b>
+        <span>药物结构式闪卡</span>
+      </div>
+
+      <!-- Mode switch -->
+      <div class="mode-switch">
+        <button class="mode-btn on" id="modeN" onclick="setMode('n2s')">名→图</button>
+        <button class="mode-btn" id="modeS" onclick="setMode('s2n')">图→名</button>
+      </div>
+
+      <div class="top-right">
+        <!-- Theme toggle -->
+        <button class="icon-btn" onclick="toggleTheme()" title="切换主题" id="themeBtn">🌙</button>
+        <!-- Shuffle -->
+        <button class="icon-btn" onclick="shuffle()" title="随机">🔀</button>
+        <!-- Stats -->
+        <div class="stat"><b id="stP">0/0</b> ✓<b id="stK" style="color:var(--gr)">0</b> ✗<b id="stD" style="color:var(--rd)">0</b></div>
+      </div>
+    </div>
+    <div class="cat-row"><select id="catSel" onchange="filterCat()"><option value="all">All Categories (285 drugs)</option><option value="General anaesthetics">General anaesthetics</option>
+<option value="Antidepressants">Antidepressants</option>
+<option value="Sedative-Hypnotics">Sedative-Hypnotics</option>
+<option value="Anxiolytics">Anxiolytics</option>
+<option value="Psychomotor stimulants">Psychomotor stimulants</option>
+<option value="Anticonvulsant Drugs">Anticonvulsant Drugs</option>
+<option value="Nootropics">Nootropics</option>
+<option value="Antidementia Drugs">Antidementia Drugs</option>
+<option value="Neuroleptics">Neuroleptics</option>
+<option value="Opioid / Narcotic analgesics">Opioid / Narcotic analgesics</option>
+<option value="Antiparkinson agents">Antiparkinson agents</option>
+<option value="Neuromuscular blocking agents">Neuromuscular blocking agents</option>
+<option value="Spasmolytics">Spasmolytics</option>
+<option value="Local Anaesthetics">Local Anaesthetics</option>
+<option value="Parasympathomimetics">Parasympathomimetics</option>
+<option value="Parasympatholytics">Parasympatholytics</option>
+<option value="Cholinesterase Reactivators">Cholinesterase Reactivators</option>
+<option value="Sympathomimetics">Sympathomimetics</option>
+<option value="Antiasthmatic drugs">Antiasthmatic drugs</option>
+<option value="Sympatholytics">Sympatholytics</option>
+<option value="Antiarrhythmic drugs">Antiarrhythmic drugs</option>
+<option value="Antihypertensive agents">Antihypertensive agents</option>
+<option value="Calcium channel blockers">Calcium channel blockers</option>
+<option value="Antianginal agents and Vasodilators">Antianginal agents and Vasodilators</option>
+<option value="Agents improving cerebral circulation">Agents improving cerebral circulation</option>
+<option value="Nonsteroidal antiinflammatory agents">Nonsteroidal antiinflammatory agents</option>
+<option value="Drugs for gout">Drugs for gout</option>
+<option value="Antitussive agents">Antitussive agents</option>
+<option value="Expectorants and Mucolytics">Expectorants and Mucolytics</option>
+<option value="Antiinflammatory steroids">Antiinflammatory steroids</option>
+<option value="Eikozanoidok">Eikozanoidok</option>
+<option value="Antiemetics">Antiemetics</option>
+<option value="Anticoagulants and haemostatics">Anticoagulants and haemostatics</option>
+<option value="Antihyperlipidaemic agents">Antihyperlipidaemic agents</option>
+<option value="Antiallergic / Antihistamines">Antiallergic / Antihistamines</option>
+<option value="Diuretics">Diuretics</option>
+<option value="Homeostasis">Homeostasis</option>
+<option value="Thyroid and antithyroid drugs">Thyroid and antithyroid drugs</option>
+<option value="FAT-SOLUBLE VITAMINS">FAT-SOLUBLE VITAMINS</option>
+<option value="WATER-SOLUBLE VITAMINS">WATER-SOLUBLE VITAMINS</option>
+<option value="Mono- and disaccharides">Mono- and disaccharides</option>
+<option value="Artificial sweeteners">Artificial sweeteners</option>
+<option value="Antidiabetics">Antidiabetics</option>
+<option value="Antibiotics">Antibiotics</option>
+<option value="Chemotherapeutic nitro compounds">Chemotherapeutic nitro compounds</option>
+<option value="Other chemotherapic compounds">Other chemotherapic compounds</option>
+<option value="Fluoroquinolone derivatives">Fluoroquinolone derivatives</option>
+<option value="Antimalarial agents">Antimalarial agents</option>
+<option value="Antifungal agents">Antifungal agents</option>
+<option value="Antituberculotics">Antituberculotics</option>
+<option value="Drugs">Drugs</option>
+<option value="Antiseptics and desinfectans">Antiseptics and desinfectans</option>
+<option value="Microbiological preservatives">Microbiological preservatives</option>
+<option value="Antineoplastic agents">Antineoplastic agents</option>
+<option value="Drugs used for immunomodulation">Drugs used for immunomodulation</option>
+<option value="Antiviral agents">Antiviral agents</option></select></div>
+  </div>
+  <div class="prog"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+
+  <!-- CONTENT -->
+  <div class="content" style="position:relative;">
+
+    <!-- CARD -->
+    <div class="scene" onclick="flipCard()">
+      <div class="card" id="card">
+
+        <!-- FRONT -->
+        <div class="face front" id="front">
+          <div class="front-meta">
+            <span class="cat-pill" id="fCat"></span>
+            <span id="fNum">–</span>
+          </div>
+          <div class="front-icon">💊</div>
+          <div class="front-text" id="fText">Loading…</div>
+          <!-- image shown in s2n mode -->
+          <img class="front-img struct" id="fImg" src="" alt="">
+          <div class="tap-hint" id="fHint">点击查看结构式 →</div>
+        </div>
+
+        <!-- BACK -->
+        <div class="face back" id="back">
+          <div class="back-spin" id="bSpin"></div>
+          <img class="back-img struct" id="bImg" src="" alt="">
+          <div class="back-name" id="bName"></div>
+          <div class="back-cat" id="bCat"></div>
+          <div class="back-hint">← 点击返回</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="btns">
+      <button class="btn btn-no" onclick="rate(false)">✗ 还不会</button>
+      <button class="btn btn-flip" onclick="flipCard()">↕</button>
+      <button class="btn btn-yes" onclick="rate(true)">✓ 已掌握</button>
+    </div>
+    <div class="nav">
+      <button class="btn-nav" onclick="go(-1)">← 上一个</button>
+      <button class="btn-nav" onclick="go(1)">下一个 →</button>
+    </div>
+
+    <!-- RESULT (overlaid, not replacing) -->
+    <div class="result" id="result">
+      <div style="font-size:44px">🎉</div>
+      <h2>本轮完成！</h2>
+      <div class="ring" id="rRing"><span id="rPct">0%</span></div>
+      <div class="res-row">
+        <div class="res-col"><div class="n" style="color:var(--gr)" id="rK">0</div><div class="l">已掌握</div></div>
+        <div class="res-col"><div class="n" style="color:var(--rd)" id="rD">0</div><div class="l">需复习</div></div>
+        <div class="res-col"><div class="n" id="rT">0</div><div class="l">总计</div></div>
+      </div>
+      <div class="res-btns">
+        <button class="btn-res" onclick="restart(false)">🔄 再来一遍</button>
+        <button class="btn-res red" onclick="restart(true)">📌 只练错题</button>
+        <button class="btn-res" onclick="closeResult()">继续翻卡 →</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+// ── DATA ──
+window.DRUGS=[{"id": 0, "name": "aether, 乙醚", "image": "image1.png", "category": "General anaesthetics"}, {"id": 1, "name": "Halothane, 氟烷", "image": "image2.png", "category": "General anaesthetics"}, {"id": 2, "name": "Isoflurane (Aerrane), 异氟烷", "image": "image3.png", "category": "General anaesthetics"}, {"id": 3, "name": "Thiopental, 硫喷妥钠", "image": "image4.png", "category": "General anaesthetics"}, {"id": 4, "name": "Ketamine (Calypsol), 氯胺酮", "image": "image5.png", "category": "General anaesthetics"}, {"id": 5, "name": "Propofol (Anesia) 异丙酚", "image": "image6.png", "category": "General anaesthetics"}, {"id": 6, "name": "Imipramin (Melipramin) 盐酸丙咪嗪", "image": "image7.png", "category": "Antidepressants"}, {"id": 7, "name": "Amitriptylin (Teperin-EP) 阿米替林", "image": "image8.png", "category": "Antidepressants"}, {"id": 8, "name": "Esketamine (Spravato), 艾氯胺酮（一种抗抑郁症药物）", "image": "image9.png", "category": "Antidepressants"}, {"id": 9, "name": "Fluoxetine (Floxet), 氟西汀；氟苯氧丙胺", "image": "image10.png", "category": "Antidepressants"}, {"id": 10, "name": "Sertaline (Zoloft) 舍曲林", "image": "image11.png", "category": "Antidepressants"}, {"id": 11, "name": "chloralhydrate, 水合氯醛", "image": "image12.png", "category": "Sedative-Hypnotics"}, {"id": 12, "name": "phenobarbital, 苯巴比妥", "image": "image13.png", "category": "Sedative-Hypnotics"}, {"id": 13, "name": "Nitrazepamum (Eunoctin), 硝基安定（镇静药）", "image": "image14.png", "category": "Sedative-Hypnotics"}, {"id": 14, "name": "Midazolamum (Dormicum), 咪达唑仑", "image": "image15.png", "category": "Sedative-Hypnotics"}, {"id": 15, "name": "Zolpidem唑吡坦", "image": "image16.png", "category": "Sedative-Hypnotics"}, {"id": 16, "name": "chlordiazepoxidum (Librium) 利眠宁，氯氮卓", "image": "image17.png", "category": "Anxiolytics"}, {"id": 17, "name": "diazepam (Valium) 安定, 地西泮", "image": "image18.png", "category": "Anxiolytics"}, {"id": 18, "name": "clonazepam (Rivotril) 氯硝西泮. 氯硝安定", "image": "image19.png", "category": "Anxiolytics"}, {"id": 19, "name": "alprazolam (Xanax) 阿普唑仑", "image": "image20.png", "category": "Anxiolytics"}, {"id": 20, "name": "clobazam (Frisium) 氧异安定, 氯巴占", "image": "image21.png", "category": "Anxiolytics"}, {"id": 21, "name": "tofizopam (Grandaxin) 托非索泮", "image": "image22.png", "category": "Anxiolytics"}, {"id": 22, "name": "buspiron (Spitomin) 螺环酮", "image": "image23.png", "category": "Anxiolytics"}, {"id": 23, "name": "Drugs Used in the Treatment of Chronic Alcoholism慢性酒精中毒", "image": "image24.png", "category": "Anxiolytics"}, {"id": 24, "name": "Disulfiram (Antaethyl)", "image": "image24.png", "category": "Anxiolytics"}, {"id": 25, "name": "Amphetamine, 苯丙胺，安非他明（解除忧郁、疲劳的药）", "image": "image25.png", "category": "Psychomotor stimulants"}, {"id": 26, "name": "caffeine, 咖啡因；茶精（兴奋剂）", "image": "image26.png", "category": "Psychomotor stimulants"}, {"id": 27, "name": "MDMA (Ecstasy), 二亚甲基双氧苯丙胺；摇头丸，快乐丸", "image": "image27.png", "category": "Psychomotor stimulants"}, {"id": 28, "name": "Cocain, 古柯碱；可卡因", "image": "image28.png", "category": "Psychomotor stimulants"}, {"id": 29, "name": "methylphenidate (Ritalin) 哌醋甲酯", "image": "image29.png", "category": "Psychomotor stimulants"}, {"id": 30, "name": "phenobarbital (Sevenal), 苯巴比妥", "image": "image30.png", "category": "Anticonvulsant Drugs"}, {"id": 31, "name": "primidone (Sertan), 普里米酮；去氧苯巴比妥", "image": "image31.png", "category": "Anticonvulsant Drugs"}, {"id": 32, "name": "phenytoine (Diphedan), （phenytoin）苯妥英", "image": "image32.png", "category": "Anticonvulsant Drugs"}, {"id": 33, "name": "clonazepam (Rivotril), 氯硝西泮", "image": "image33.png", "category": "Anticonvulsant Drugs"}, {"id": 34, "name": "carbamazepine (Tegretol), 立痛定；卡巴咪嗪；酰胺咪嗪；氨甲酰氮草", "image": "image34.png", "category": "Anticonvulsant Drugs"}, {"id": 35, "name": "lamotrigin (Lamictal), 拉莫三嗪", "image": "image35.png", "category": "Anticonvulsant Drugs"}, {"id": 36, "name": "valproic acid (Convulex), 丙戊酸：治疗癫痫和躁郁症，预防偏头痛", "image": "image36.png", "category": "Anticonvulsant Drugs"}, {"id": 37, "name": "pregabalin (Lycrica) 普瑞巴林", "image": "image37.png", "category": "Anticonvulsant Drugs"}, {"id": 38, "name": "piracetam (Nootropil) 吡拉西坦", "image": "image39.png", "category": "Nootropics"}, {"id": 39, "name": "glutamic acid谷氨酸是一种晶体氨基酸，广泛分布于植物和动物蛋白质中。", "image": "image40.png", "category": "Nootropics"}, {"id": 40, "name": "rivastigmine (Exelpon), 卡巴拉汀", "image": "image41.png", "category": "Antidementia Drugs"}, {"id": 41, "name": "vinpocetine (Cavinton) 长春西汀（一种吲哚类生物碱）", "image": "image42.png", "category": "Antidementia Drugs"}, {"id": 42, "name": "chlorpromazine, 氯丙嗪", "image": "image43.png", "category": "Neuroleptics"}, {"id": 43, "name": "chlorprotixen (Truxal), 氯普噻吨", "image": "image44.png", "category": "Neuroleptics"}, {"id": 44, "name": "clozapine (Leponex), 氯氮平", "image": "image45.png", "category": "Neuroleptics"}, {"id": 45, "name": "amisulpride (Amitrex), 氨磺必利", "image": "image46.png", "category": "Neuroleptics"}, {"id": 46, "name": "haloperidol, 氟哌丁苯（一种强安定药）", "image": "image47.png", "category": "Neuroleptics"}, {"id": 47, "name": "risperidone (Risperdal), 利培酮", "image": "image48.png", "category": "Neuroleptics"}, {"id": 48, "name": "cariprazine (Reagila) 卡利拉嗪", "image": "image49.png", "category": "Neuroleptics"}, {"id": 49, "name": "Morphinium chloratum", "image": "image50.png", "category": "Opioid / Narcotic analgesics"}, {"id": 50, "name": "Aethylmorphini hydrochloricum盐酸乙基吗啡，狄奥宁", "image": "image51.png", "category": "Opioid / Narcotic analgesics"}, {"id": 51, "name": "Pethidine哌替啶（麻醉镇痛药）", "image": "image52.png", "category": "Opioid / Narcotic analgesics"}, {"id": 52, "name": "methadon, 美沙酮（一种镇痛剂）", "image": "image53.png", "category": "Opioid / Narcotic analgesics"}, {"id": 53, "name": "fentanil (Durogesic) =Fentanyl, Fentanylum芬太尼(鸦片止痛剂)", "image": "image54.png", "category": "Opioid / Narcotic analgesics"}, {"id": 54, "name": "tramadol (Contramal), 反胺苯环醇，曲马朵", "image": "image55.png", "category": "Opioid / Narcotic analgesics"}, {"id": 55, "name": "naloxone (Nexodal) 纳洛酮（吗啡拮抗药）", "image": "image56.png", "category": "Opioid / Narcotic analgesics"}, {"id": 56, "name": "levodopa左旋多巴", "image": "image57.png", "category": "Antiparkinson agents"}, {"id": 57, "name": "carbidopa卡比多巴", "image": "image58.png", "category": "Antiparkinson agents"}, {"id": 58, "name": "amantadine (Viregyt-K) 金刚烷胺", "image": "image59.png", "category": "Antiparkinson agents"}, {"id": 59, "name": "Apomorphini hydrochloricum (Dacepton) 阿扑吗啡", "image": "image60.png", "category": "Antiparkinson agents"}, {"id": 60, "name": "Selegiline司立吉林", "image": "image61.png", "category": "Antiparkinson agents"}, {"id": 61, "name": "razagiline (Azilect)", "image": "image62.png", "category": "Antiparkinson agents"}, {"id": 62, "name": "biperiden (Akineton) 比哌立登", "image": "image63.png", "category": "Antiparkinson agents"}, {"id": 63, "name": "Skeletal Muscle Relaxants (Muscle relactants): 骨骼肌松弛剂", "image": "image65.png", "category": "Antiparkinson agents"}, {"id": 64, "name": "baclofenum (Lioresal) 巴氯芬", "image": "image65.png", "category": "Antiparkinson agents"}, {"id": 65, "name": "tolperisone (Mydeton) 托哌酮", "image": "image66.png", "category": "Antiparkinson agents"}, {"id": 66, "name": "atracuron ium besilate (Tracrium) 苯磺阿曲库铵", "image": "image67.png", "category": "Neuromuscular blocking agents"}, {"id": 67, "name": "Pipecuroni hydrobromidum (Arduan)", "image": "image68.png", "category": "Neuromuscular blocking agents"}, {"id": 68, "name": "Papaverine罂粟碱", "image": "image69.png", "category": "Spasmolytics"}, {"id": 69, "name": "drotaverine (No-Spa) 屈他维林", "image": "image70.png", "category": "Spasmolytics"}, {"id": 70, "name": "bencyclan (Halidor) 苄环烷", "image": "image71.png", "category": "Spasmolytics"}, {"id": 71, "name": "Cocaine 可卡因", "image": "image72.png", "category": "Local Anaesthetics"}, {"id": 72, "name": "Benzocaine 苯坐卡因", "image": "image73.png", "category": "Local Anaesthetics"}, {"id": 73, "name": "Procaine 普鲁卡因", "image": "image74.png", "category": "Local Anaesthetics"}, {"id": 74, "name": "Lidocaine 利多卡因", "image": "image75.png", "category": "Local Anaesthetics"}, {"id": 75, "name": "Articaine阿替卡因", "image": "image76.png", "category": "Local Anaesthetics"}, {"id": 76, "name": "Acetylcholine chloride", "image": "image77.png", "category": "Parasympathomimetics"}, {"id": 77, "name": "Carbachol  碳酰胆碱；氯化氨甲酰胆碱", "image": "image78.png", "category": "Parasympathomimetics"}, {"id": 78, "name": "Pilocarpine (Salagen) 毛果芸香碱（一种眼科缩瞳药）", "image": "image79.png", "category": "Parasympathomimetics"}, {"id": 79, "name": "Physostigmine  毒扁豆碱（一种眼科缩瞳药）", "image": "image80.png", "category": "Parasympathomimetics"}, {"id": 80, "name": "Neostigmine methylsulfate (Stigmosan) 甲硫酸新斯的明：一种用于治疗肌无力症和其他神经肌肉疾病的药物，通过抑制乙酰胆碱酯酶的活性来增强神经肌肉传导", "image": "image81.png", "category": "Parasympathomimetics"}, {"id": 81, "name": "Atropine 阿托品", "image": "image82.png", "category": "Parasympatholytics"}, {"id": 82, "name": "Homatropine后马托品", "image": "image83.png", "category": "Parasympatholytics"}, {"id": 83, "name": "Scopolamine莨菪碱", "image": "image84.png", "category": "Parasympatholytics"}, {"id": 84, "name": "Tiotropium bromide (Spiriva) 溴化噻托溴铵", "image": "image85.png", "category": "Parasympatholytics"}, {"id": 85, "name": "Tropicamide (Unitropic) 托品酰胺", "image": "image86.png", "category": "Parasympatholytics"}, {"id": 86, "name": "Hallucinogens and Illegal Drugs致幻剂和非法药物", "image": "image87.png", "category": "Parasympatholytics"}, {"id": 87, "name": "Cocaine 可卡因", "image": "image87.png", "category": "Parasympatholytics"}, {"id": 88, "name": "Heroin 海洛因", "image": "image88.png", "category": "Parasympatholytics"}, {"id": 89, "name": "LSD麦角酸二乙基酰胺", "image": "image89.png", "category": "Parasympatholytics"}, {"id": 90, "name": "Tetrahydrocannabinol (THC) 四氢大麻酚", "image": "image90.png", "category": "Parasympatholytics"}, {"id": 91, "name": "MDMA (Ecstasy) 摇头丸；二亚甲基双氧苯丙胺（methylene dioxymetham-phetamine）", "image": "image91.png", "category": "Parasympatholytics"}, {"id": 92, "name": "Pralidoxime磷定", "image": "image92.png", "category": "Cholinesterase Reactivators"}, {"id": 93, "name": "Epinephrine\\ (Anapen, Tonogen),", "image": "image93.png", "category": "Sympathomimetics"}, {"id": 94, "name": "Isoprenaline,", "image": "image94.png", "category": "Sympathomimetics"}, {"id": 95, "name": "Phenylephrine,", "image": "image95.png", "category": "Sympathomimetics"}, {"id": 96, "name": "Ephedrine (Epherit),", "image": "image96.png", "category": "Sympathomimetics"}, {"id": 97, "name": "Pseudoephedrine,", "image": "image97.png", "category": "Sympathomimetics"}, {"id": 98, "name": "Naphazoline,", "image": "image98.png", "category": "Sympathomimetics"}, {"id": 99, "name": "Xylomethazoline (Novorin)", "image": "image99.png", "category": "Sympathomimetics"}, {"id": 100, "name": "Theophylline (Theospirex), 茶碱", "image": "image100.png", "category": "Antiasthmatic drugs"}, {"id": 101, "name": "Terbutaline (Bricanyl) 特布他林；间羟舒喘宁；间羟叔丁肾上腺素", "image": "image101.png", "category": "Antiasthmatic drugs"}, {"id": 102, "name": "Prazosine (Minipress), 哌唑嗪", "image": "image102.png", "category": "Sympatholytics"}, {"id": 103, "name": "Propranolol (Huma-pronol), 心得安（一种用于治疗心律不齐、心绞痛等的药物）", "image": "image103.png", "category": "Sympatholytics"}, {"id": 104, "name": "Bizoprolol (Concor) 比佐洛尔", "image": "image104.png", "category": "Sympatholytics"}, {"id": 105, "name": "Quinidine, 奎尼定（抗心律不齐药）", "image": "image105.png", "category": "Antiarrhythmic drugs"}, {"id": 106, "name": "Lidocaine,", "image": "image106.png", "category": "Antiarrhythmic drugs"}, {"id": 107, "name": "Amiodarone (Cordarone) 胺碘酮", "image": "image107.png", "category": "Antiarrhythmic drugs"}, {"id": 108, "name": "Methyldopum (Dopegyt),", "image": "image108.png", "category": "Antihypertensive agents"}, {"id": 109, "name": "Captopril (Tensiomin), 甲巯丙脯酸", "image": "image109.png", "category": "Antihypertensive agents"}, {"id": 110, "name": "Enalapril (Ednyt), 依那普利", "image": "image110.png", "category": "Antihypertensive agents"}, {"id": 111, "name": "Losartan (Cozaar), 氯沙坦", "image": "image111.png", "category": "Antihypertensive agents"}, {"id": 112, "name": "Dihydralazine (Nepresol),", "image": "image112.png", "category": "Antihypertensive agents"}, {"id": 113, "name": "Moxonidine (Moxogamma)", "image": "image113.png", "category": "Antihypertensive agents"}, {"id": 114, "name": "Nifedipine (Corinfar),", "image": "image114.png", "category": "Calcium channel blockers"}, {"id": 115, "name": "amlodipine (Norvasc),", "image": "image115.png", "category": "Calcium channel blockers"}, {"id": 116, "name": "Verapamil (Isoptin),", "image": "image116.png", "category": "Calcium channel blockers"}, {"id": 117, "name": "Diltiazem(Blocalcin)", "image": "image118.png", "category": "Calcium channel blockers"}, {"id": 118, "name": "Glyceril trinitrate (Nitromint),", "image": "image119.png", "category": "Antianginal agents and Vasodilators"}, {"id": 119, "name": "Isosorbide mononitrate (Mono Mack),", "image": "image120.png", "category": "Antianginal agents and Vasodilators"}, {"id": 120, "name": "Nicotinic acid,", "image": "image121.png", "category": "Antianginal agents and Vasodilators"}, {"id": 121, "name": "Pentoxyfilline (Trental)", "image": "image122.png", "category": "Antianginal agents and Vasodilators"}, {"id": 122, "name": "Vinpocetine (Cavinton),", "image": "image123.png", "category": "Agents improving cerebral circulation"}, {"id": 123, "name": "Cinnarizine (Stugeron)", "image": "image124.png", "category": "Agents improving cerebral circulation"}, {"id": 124, "name": "Digitalis and other cardiac glycosides，Cardiotonic Drugs (Cardiotonics):", "image": "image125.png", "category": "Agents improving cerebral circulation"}, {"id": 125, "name": "Digitoxin (Digimerck)", "image": "image125.png", "category": "Agents improving cerebral circulation"}, {"id": 126, "name": "Nonsteroidal analgesics and antipyretics: 非甾体类镇痛药和解热药:", "image": "image126.png", "category": "Agents improving cerebral circulation"}, {"id": 127, "name": "Salicyclic acid,", "image": "image126.png", "category": "Agents improving cerebral circulation"}, {"id": 128, "name": "Acetylsalicylic acid (Aspirin),", "image": "image127.png", "category": "Agents improving cerebral circulation"}, {"id": 129, "name": "Paracetamol (Rubophen),", "image": "image128.png", "category": "Agents improving cerebral circulation"}, {"id": 130, "name": "Propyphenazone,", "image": "image129.png", "category": "Agents improving cerebral circulation"}, {"id": 131, "name": "Metamizole sodium (Algopyrin)", "image": "image130.png", "category": "Agents improving cerebral circulation"}, {"id": 132, "name": "Phenylbutazone, 苯基丁氮酮（一种止痛退烧药）", "image": "image131.png", "category": "Nonsteroidal antiinflammatory agents"}, {"id": 133, "name": "Mefenaminic acid (Ponmel), 酚酸美敏酸", "image": "image132.png", "category": "Nonsteroidal antiinflammatory agents"}, {"id": 134, "name": "Diclofenac (Voltaren, Cataflam), 双氯芬酸", "image": "image135.png", "category": "Nonsteroidal antiinflammatory agents"}, {"id": 135, "name": "Ibuprofen (Advil), 布洛芬", "image": "image136.png", "category": "Nonsteroidal antiinflammatory agents"}, {"id": 136, "name": "Naproxen (Apranax, Aleve), 萘普生；甲氧萘丙酸", "image": "image137.png", "category": "Nonsteroidal antiinflammatory agents"}, {"id": 137, "name": "Piroxicam (Brexin, Feldene) 吡罗昔康", "image": "image138.png", "category": "Nonsteroidal antiinflammatory agents"}, {"id": 138, "name": "Allopurinol (Milurit), 别嘌呤醇", "image": "image139.png", "category": "Drugs for gout"}, {"id": 139, "name": "Colchicine (Colchicum-Dispert) 秋水仙碱bu", "image": "image140.png", "category": "Drugs for gout"}, {"id": 140, "name": "Codeine,", "image": "image141.png", "category": "Antitussive agents"}, {"id": 141, "name": "Prenoxdiazine (Libexin)", "image": "image142.png", "category": "Antitussive agents"}, {"id": 142, "name": "Bromhexine (Paxirasol),", "image": "image143.png", "category": "Expectorants and Mucolytics"}, {"id": 143, "name": "Ambroxol,", "image": "image144.png", "category": "Expectorants and Mucolytics"}, {"id": 144, "name": "Terpin,", "image": "image145.png", "category": "Expectorants and Mucolytics"}, {"id": 145, "name": "Acetylcysteine (ACC, Fluimucil)", "image": "image146.png", "category": "Expectorants and Mucolytics"}, {"id": 146, "name": "Sex hormones and analogues: :oestrogens, anti-oestrogens, gestagens", "image": "image147.png", "category": "Expectorants and Mucolytics"}, {"id": 147, "name": "Oestradiol,", "image": "image147.png", "category": "Expectorants and Mucolytics"}, {"id": 148, "name": "Ethinyl oestradiol,", "image": "image148.png", "category": "Expectorants and Mucolytics"}, {"id": 149, "name": "Clomifen (Clostilbegyt),", "image": "image149.png", "category": "Expectorants and Mucolytics"}, {"id": 150, "name": "anastrozole (Anabrest),", "image": "image150.png", "category": "Expectorants and Mucolytics"}, {"id": 151, "name": "raloxifen (Evista),", "image": "image151.png", "category": "Expectorants and Mucolytics"}, {"id": 152, "name": "Progesterone (Utrogestan),", "image": "image152.png", "category": "Expectorants and Mucolytics"}, {"id": 153, "name": "Levonorgestrel (Escapelle)", "image": "image153.png", "category": "Expectorants and Mucolytics"}, {"id": 154, "name": "Sex Hormones and Their Analogues: androgens, anti-androgens, anabolics", "image": "image154.png", "category": "Expectorants and Mucolytics"}, {"id": 155, "name": "Testosterone (Andriol),", "image": "image154.png", "category": "Expectorants and Mucolytics"}, {"id": 156, "name": "Nandrolone (Retabolil),", "image": "image155.png", "category": "Expectorants and Mucolytics"}, {"id": 157, "name": "finasteride (Prosterid),", "image": "image156.png", "category": "Expectorants and Mucolytics"}, {"id": 158, "name": "bicalutamide (Bilutamid)", "image": "image157.png", "category": "Expectorants and Mucolytics"}, {"id": 159, "name": "Nonsteroidal agents acting on sexual activity (Drugs for Erectile Dysfunction):", "image": "image158.png", "category": "Expectorants and Mucolytics"}, {"id": 160, "name": "Sildenafil (Viagra)", "image": "image158.png", "category": "Expectorants and Mucolytics"}, {"id": 161, "name": "Hydrocortisone,", "image": "image159.png", "category": "Antiinflammatory steroids"}, {"id": 162, "name": "Prednisolone,", "image": "image160.png", "category": "Antiinflammatory steroids"}, {"id": 163, "name": "Betamethazone,", "image": "image161.png", "category": "Antiinflammatory steroids"}, {"id": 164, "name": "Dexamethasone (Dexeto),", "image": "image162.png", "category": "Antiinflammatory steroids"}, {"id": 165, "name": "Triamcinolone acetonide (Ftorocort),", "image": "image163.png", "category": "Antiinflammatory steroids"}, {"id": 166, "name": "Fluticasone (Cutivate)", "image": "image164.png", "category": "Antiinflammatory steroids"}, {"id": 167, "name": "dinoproszton (PGE2)", "image": "image165.png", "category": "Eikozanoidok"}, {"id": 168, "name": "Drugs used in stomach disease, Drugs Affecting the motility of {#_Toc203597784", "image": "image166.png", "category": "Eikozanoidok"}, {"id": 169, "name": "Phenolphthalein", "image": "image166.png", "category": "Eikozanoidok"}, {"id": 170, "name": "Loperamide (Imodium),", "image": "image167.png", "category": "Eikozanoidok"}, {"id": 171, "name": "Metoclopramide (Cerucal),", "image": "image168.png", "category": "Eikozanoidok"}, {"id": 172, "name": "famotidin (Quamatel),", "image": "image169.png", "category": "Eikozanoidok"}, {"id": 173, "name": "Omeprazole (Losec),", "image": "image170.png", "category": "Eikozanoidok"}, {"id": 174, "name": "Sulfasalazine (Salazopyrin)", "image": "image171.png", "category": "Eikozanoidok"}, {"id": 175, "name": "Ondansetron (Zofran),", "image": "image172.png", "category": "Antiemetics"}, {"id": 176, "name": "Metoclopramide (Cerucal),", "image": "image173.png", "category": "Antiemetics"}, {"id": 177, "name": "Dimenhydrinate (Daedalon)", "image": "image174.png", "category": "Antiemetics"}, {"id": 178, "name": "Sulfasalazine (Salazopyrin)", "image": "image171.png", "category": "Antiemetics"}, {"id": 179, "name": "Dehydrocholic acid (Bila-Git)", "image": "image175.png", "category": "Antiemetics"}, {"id": 180, "name": "heparin (Lioton),", "image": "image176.png", "category": "Anticoagulants and haemostatics"}, {"id": 181, "name": "Acenocoumarol (Syncumar),", "image": "image177.png", "category": "Anticoagulants and haemostatics"}, {"id": 182, "name": "klopidrogel (Plavix),", "image": "image178.png", "category": "Anticoagulants and haemostatics"}, {"id": 183, "name": "tranexamic acid (Exacyl)", "image": "image179.png", "category": "Anticoagulants and haemostatics"}, {"id": 184, "name": "atorvastatin (Atorvox), 阿托伐他汀：降低胆固醇，用于治疗高胆固醇血症和预防心血管疾病。", "image": "image180.png", "category": "Antihyperlipidaemic agents"}, {"id": 185, "name": "Phenofibrate (Lipidil)", "image": "image181.png", "category": "Antihyperlipidaemic agents"}, {"id": 186, "name": "Promethazine (Pipolphen),", "image": "image182.png", "category": "Antiallergic / Antihistamines"}, {"id": 187, "name": "Dimenhydrinate (Daedalon),", "image": "image183.png", "category": "Antiallergic / Antihistamines"}, {"id": 188, "name": "Dimethindene (Fenistil),", "image": "image184.png", "category": "Antiallergic / Antihistamines"}, {"id": 189, "name": "Cetirizine (Zyrtec),", "image": "image185.png", "category": "Antiallergic / Antihistamines"}, {"id": 190, "name": "Loratadine (Claritine)", "image": "image186.png", "category": "Antiallergic / Antihistamines"}, {"id": 191, "name": "Furosemide (Furon),", "image": "image187.png", "category": "Diuretics"}, {"id": 192, "name": "Hydrochlorothiazide (Hypothiazid),", "image": "image188.png", "category": "Diuretics"}, {"id": 193, "name": "Etacrynic acid (Uregyt),", "image": "image189.png", "category": "Diuretics"}, {"id": 194, "name": "Amiloride,", "image": "image190.png", "category": "Diuretics"}, {"id": 195, "name": "Spironolactone (Verospiron),", "image": "image191.png", "category": "Diuretics"}, {"id": 196, "name": "Mannitol", "image": "image192.png", "category": "Diuretics"}, {"id": 197, "name": "aledronic acid (Sedron),", "image": "image193.png", "category": "Homeostasis"}, {"id": 198, "name": "raloxifene (Evista),", "image": "image194.png", "category": "Homeostasis"}, {"id": 199, "name": "cholecalciferol (vitamin D3)", "image": "image195.png", "category": "Homeostasis"}, {"id": 200, "name": "Levothyroxine (Euthyrox),", "image": "image196.png", "category": "Thyroid and antithyroid drugs"}, {"id": 201, "name": "Thiamazole (Metothyrin),", "image": "image197.png", "category": "Thyroid and antithyroid drugs"}, {"id": 202, "name": "Propylthiouracil (Propycil)", "image": "image198.png", "category": "Thyroid and antithyroid drugs"}, {"id": 203, "name": "Retinol (vitamin A1)", "image": "image199.png", "category": "FAT-SOLUBLE VITAMINS"}, {"id": 204, "name": "Ergocalciferol (vitamin D2)", "image": "image200.png", "category": "FAT-SOLUBLE VITAMINS"}, {"id": 205, "name": "Cholecalciferol (vitamin D3)", "image": "image201.png", "category": "FAT-SOLUBLE VITAMINS"}, {"id": 206, "name": "Menadione (vitamin K3),", "image": "image202.png", "category": "FAT-SOLUBLE VITAMINS"}, {"id": 207, "name": "Thiamine chloride (vitamin B1)", "image": "image203.png", "category": "WATER-SOLUBLE VITAMINS"}, {"id": 208, "name": "Riboflavine (vitamin B2),", "image": "image204.png", "category": "WATER-SOLUBLE VITAMINS"}, {"id": 209, "name": "Pyridoxine (vitamin B6),", "image": "image205.png", "category": "WATER-SOLUBLE VITAMINS"}, {"id": 210, "name": "Nicotinamide,", "image": "image206.png", "category": "WATER-SOLUBLE VITAMINS"}, {"id": 211, "name": "Folic acid,", "image": "image207.png", "category": "WATER-SOLUBLE VITAMINS"}, {"id": 212, "name": "Ascorbic acid (vitamin C)", "image": "image208.png", "category": "WATER-SOLUBLE VITAMINS"}, {"id": 213, "name": "Fructose,", "image": "image209.png", "category": "Mono- and disaccharides"}, {"id": 214, "name": "Glucose,", "image": "image210.png", "category": "Mono- and disaccharides"}, {"id": 215, "name": "Lactose,", "image": "image211.png", "category": "Mono- and disaccharides"}, {"id": 216, "name": "Sucrose", "image": "image212.png", "category": "Mono- and disaccharides"}, {"id": 217, "name": "Saccharin sodium,", "image": "image213.png", "category": "Artificial sweeteners"}, {"id": 218, "name": "Aspartame (Nutrasweet),", "image": "image214.png", "category": "Artificial sweeteners"}, {"id": 219, "name": "Acesulfame potassium", "image": "image215.png", "category": "Artificial sweeteners"}, {"id": 220, "name": "insulin,", "image": "image216.png", "category": "Antidiabetics"}, {"id": 221, "name": "Glibenclamide (Amglidia),", "image": "image216.png", "category": "Antidiabetics"}, {"id": 222, "name": "Metformin (Adimet, Meforal)", "image": "image217.png", "category": "Antidiabetics"}, {"id": 223, "name": "Sitagliptin (Januvia)", "image": "image218.png", "category": "Antidiabetics"}, {"id": 224, "name": "Dapaglifozin (Forxiga)", "image": "image219.png", "category": "Antidiabetics"}, {"id": 225, "name": "Benzylpenicillin,", "image": "image221.png", "category": "Antibiotics"}, {"id": 226, "name": "Amoxicillin (Ospamox),", "image": "image223.png", "category": "Antibiotics"}, {"id": 227, "name": "Oxacillin,", "image": "image224.png", "category": "Antibiotics"}, {"id": 228, "name": "Imipenem,", "image": "image225.png", "category": "Antibiotics"}, {"id": 229, "name": "Sulbactam,", "image": "image226.png", "category": "Antibiotics"}, {"id": 230, "name": "Clavulanic acid,", "image": "image227.png", "category": "Antibiotics"}, {"id": 231, "name": "Cephalexin (Pyassan),", "image": "image229.png", "category": "Antibiotics"}, {"id": 232, "name": "Cefixim (Suprax),", "image": "image231.png", "category": "Antibiotics"}, {"id": 233, "name": "Chloramphenicol,", "image": "image232.png", "category": "Antibiotics"}, {"id": 234, "name": "Doxycycline (Tenutan),", "image": "image233.png", "category": "Antibiotics"}, {"id": 235, "name": "Tobramycin (Tobrex),", "image": "image234.png", "category": "Antibiotics"}, {"id": 236, "name": "clarithromycin (Klacid)", "image": "image235.png", "category": "Antibiotics"}, {"id": 237, "name": "Chemotherapic sulfonamides （Antibacterial Sulfonamides）:", "image": "image236.png", "category": "Antibiotics"}, {"id": 238, "name": "Sulfadimidine (Septosyl),", "image": "image236.png", "category": "Antibiotics"}, {"id": 239, "name": "Sulfamethoxazole", "image": "image237.png", "category": "Antibiotics"}, {"id": 240, "name": "Nitrofurantoin,", "image": "image238.png", "category": "Chemotherapeutic nitro compounds"}, {"id": 241, "name": "Metronidazole (Klion)", "image": "image239.png", "category": "Chemotherapeutic nitro compounds"}, {"id": 242, "name": "Trimethoprim", "image": "image240.png", "category": "Other chemotherapic compounds"}, {"id": 243, "name": "Ciprofloxacin (Ciprobay),", "image": "image241.png", "category": "Fluoroquinolone derivatives"}, {"id": 244, "name": "Levofloxacin (Savulin)", "image": "image242.png", "category": "Fluoroquinolone derivatives"}, {"id": 245, "name": "Quinine,", "image": "image243.png", "category": "Antimalarial agents"}, {"id": 246, "name": "Chloroquine (Delagil),", "image": "image244.png", "category": "Antimalarial agents"}, {"id": 247, "name": "Proguanil,", "image": "image245.png", "category": "Antimalarial agents"}, {"id": 248, "name": "Artesunate", "image": "image246.png", "category": "Antimalarial agents"}, {"id": 249, "name": "Clotrimazole (Canesten),", "image": "image247.png", "category": "Antifungal agents"}, {"id": 250, "name": "Tolnaftate (Chinofungin),", "image": "image248.png", "category": "Antifungal agents"}, {"id": 251, "name": "Terbinafine (Terbisil),", "image": "image249.png", "category": "Antifungal agents"}, {"id": 252, "name": "Amphotericin B", "image": "image250.png", "category": "Antifungal agents"}, {"id": 253, "name": "Fluconazole", "image": "image251.png", "category": "Antifungal agents"}, {"id": 254, "name": "Isoniazid (Isonicid),", "image": "image252.png", "category": "Antituberculotics"}, {"id": 255, "name": "Ethambutol", "image": "image253.png", "category": "Antituberculotics"}, {"id": 256, "name": "Levamisole (Decaris),", "image": "image254.png", "category": "Drugs"}, {"id": 257, "name": "Mebendazole (Vermox)", "image": "image255.png", "category": "Drugs"}, {"id": 258, "name": "Phenol,", "image": "image256.png", "category": "Antiseptics and desinfectans"}, {"id": 259, "name": "resorcinol,", "image": "image257.png", "category": "Antiseptics and desinfectans"}, {"id": 260, "name": "thymol,", "image": "image258.png", "category": "Antiseptics and desinfectans"}, {"id": 261, "name": "lactic acid,", "image": "image259.png", "category": "Antiseptics and desinfectans"}, {"id": 262, "name": "benzalkonium chloride,", "image": "image260.png", "category": "Antiseptics and desinfectans"}, {"id": 263, "name": "Methenamine,", "image": "image261.png", "category": "Antiseptics and desinfectans"}, {"id": 264, "name": "Chlorhexidine", "image": "image262.png", "category": "Antiseptics and desinfectans"}, {"id": 265, "name": "Methyl p-hydroxybenzoate", "image": "image263.png", "category": "Microbiological preservatives"}, {"id": 266, "name": "benzoic acid", "image": "image264.png", "category": "Microbiological preservatives"}, {"id": 267, "name": "sorbic acid", "image": "image265.png", "category": "Microbiological preservatives"}, {"id": 268, "name": "Cyclophosphamide (Endoxan),", "image": "image266.png", "category": "Antineoplastic agents"}, {"id": 269, "name": "mesna (Uromitexan),", "image": "image267.png", "category": "Antineoplastic agents"}, {"id": 270, "name": "carmustin", "image": "image268.png", "category": "Antineoplastic agents"}, {"id": 271, "name": "Carboplatin,", "image": "image269.png", "category": "Antineoplastic agents"}, {"id": 272, "name": "Fluorouracil (Efudix),", "image": "image270.png", "category": "Antineoplastic agents"}, {"id": 273, "name": "Methotrexate (Namaxir)", "image": "image271.png", "category": "Antineoplastic agents"}, {"id": 274, "name": "lenalidomid (Revlimid)", "image": "image272.png", "category": "Antineoplastic agents"}, {"id": 275, "name": "Imatinib (Glivec)", "image": "image273.png", "category": "Antineoplastic agents"}, {"id": 276, "name": "Hydroxycarbamide", "image": "image274.png", "category": "Antineoplastic agents"}, {"id": 277, "name": "bortezomib (Velcade)", "image": "image275.png", "category": "Antineoplastic agents"}, {"id": 278, "name": "paclitaxel (Abraxane)", "image": "image276.png", "category": "Antineoplastic agents"}, {"id": 279, "name": "Azathioprine (Imuran)", "image": "image277.png", "category": "Drugs used for immunomodulation"}, {"id": 280, "name": "Amantadine (Viregyt),", "image": "image278.png", "category": "Antiviral agents"}, {"id": 281, "name": "Acyclovir (Zovirax),", "image": "image279.png", "category": "Antiviral agents"}, {"id": 282, "name": "Lavimudin (Epivir),", "image": "image280.png", "category": "Antiviral agents"}, {"id": 283, "name": "Nevirapine (Viramune),", "image": "image281.png", "category": "Antiviral agents"}, {"id": 284, "name": "oseltamivir (Tamiflu)", "image": "image282.png", "category": "Antiviral agents"}];
+window.CMAP={"image1.png": 0, "image2.png": 0, "image3.png": 0, "image4.png": 0, "image5.png": 0, "image6.png": 0, "image7.png": 0, "image8.png": 0, "image9.png": 0, "image10.png": 0, "image11.png": 0, "image12.png": 0, "image13.png": 0, "image14.png": 0, "image15.png": 0, "image16.png": 0, "image17.png": 0, "image18.png": 0, "image19.png": 0, "image20.png": 0, "image21.png": 1, "image22.png": 1, "image23.png": 1, "image24.png": 1, "image25.png": 1, "image26.png": 1, "image27.png": 1, "image28.png": 1, "image29.png": 1, "image30.png": 1, "image31.png": 1, "image32.png": 1, "image33.png": 1, "image34.png": 1, "image35.png": 1, "image36.png": 1, "image37.png": 1, "image39.png": 1, "image40.png": 1, "image41.png": 2, "image42.png": 2, "image43.png": 2, "image44.png": 2, "image45.png": 2, "image46.png": 2, "image47.png": 2, "image48.png": 2, "image49.png": 2, "image50.png": 2, "image51.png": 2, "image52.png": 2, "image53.png": 2, "image54.png": 2, "image55.png": 2, "image56.png": 2, "image57.png": 2, "image58.png": 2, "image59.png": 2, "image60.png": 2, "image61.png": 3, "image62.png": 3, "image63.png": 3, "image65.png": 3, "image66.png": 3, "image67.png": 3, "image68.png": 3, "image69.png": 3, "image70.png": 3, "image71.png": 3, "image72.png": 3, "image73.png": 3, "image74.png": 3, "image75.png": 3, "image76.png": 3, "image77.png": 3, "image78.png": 3, "image79.png": 3, "image80.png": 3, "image81.png": 4, "image82.png": 4, "image83.png": 4, "image84.png": 4, "image85.png": 4, "image86.png": 4, "image87.png": 4, "image88.png": 4, "image89.png": 4, "image90.png": 4, "image91.png": 4, "image92.png": 4, "image93.png": 4, "image94.png": 4, "image95.png": 4, "image96.png": 4, "image97.png": 4, "image98.png": 4, "image99.png": 4, "image100.png": 5, "image101.png": 5, "image102.png": 5, "image103.png": 5, "image104.png": 5, "image105.png": 5, "image106.png": 5, "image107.png": 5, "image108.png": 5, "image109.png": 5, "image110.png": 5, "image111.png": 5, "image112.png": 5, "image113.png": 5, "image114.png": 5, "image115.png": 5, "image116.png": 5, "image118.png": 5, "image119.png": 5, "image120.png": 5, "image121.png": 6, "image122.png": 6, "image123.png": 6, "image124.png": 6, "image125.png": 6, "image126.png": 6, "image127.png": 6, "image128.png": 6, "image129.png": 6, "image130.png": 6, "image131.png": 6, "image132.png": 6, "image135.png": 6, "image136.png": 6, "image137.png": 6, "image138.png": 6, "image139.png": 6, "image140.png": 6, "image141.png": 7, "image142.png": 7, "image143.png": 7, "image144.png": 7, "image145.png": 7, "image146.png": 7, "image147.png": 7, "image148.png": 7, "image149.png": 7, "image150.png": 7, "image151.png": 7, "image152.png": 7, "image153.png": 7, "image154.png": 7, "image155.png": 7, "image156.png": 7, "image157.png": 7, "image158.png": 8, "image159.png": 8, "image160.png": 8, "image161.png": 8, "image162.png": 8, "image163.png": 8, "image164.png": 8, "image165.png": 8, "image166.png": 8, "image167.png": 8, "image168.png": 8, "image169.png": 8, "image170.png": 8, "image171.png": 8, "image172.png": 8, "image173.png": 8, "image174.png": 8, "image175.png": 8, "image176.png": 9, "image177.png": 9, "image178.png": 9, "image179.png": 9, "image180.png": 9, "image181.png": 9, "image182.png": 9, "image183.png": 9, "image184.png": 9, "image185.png": 9, "image186.png": 9, "image187.png": 9, "image188.png": 9, "image189.png": 9, "image190.png": 9, "image191.png": 9, "image192.png": 9, "image193.png": 9, "image194.png": 9, "image195.png": 9, "image196.png": 10, "image197.png": 10, "image198.png": 10, "image199.png": 10, "image200.png": 10, "image201.png": 10, "image202.png": 10, "image203.png": 10, "image204.png": 10, "image205.png": 10, "image206.png": 10, "image207.png": 10, "image208.png": 10, "image209.png": 10, "image210.png": 10, "image211.png": 10, "image212.png": 10, "image213.png": 10, "image214.png": 10, "image215.png": 10, "image216.png": 11, "image217.png": 11, "image218.png": 11, "image219.png": 11, "image221.png": 11, "image223.png": 11, "image224.png": 11, "image225.png": 11, "image226.png": 11, "image227.png": 11, "image229.png": 11, "image231.png": 11, "image232.png": 11, "image233.png": 11, "image234.png": 11, "image235.png": 11, "image236.png": 11, "image237.png": 11, "image238.png": 12, "image239.png": 12, "image240.png": 12, "image241.png": 12, "image242.png": 12, "image243.png": 12, "image244.png": 12, "image245.png": 12, "image246.png": 12, "image247.png": 12, "image248.png": 12, "image249.png": 12, "image250.png": 12, "image251.png": 12, "image252.png": 12, "image253.png": 12, "image254.png": 12, "image255.png": 12, "image256.png": 12, "image257.png": 12, "image258.png": 13, "image259.png": 13, "image260.png": 13, "image261.png": 13, "image262.png": 13, "image263.png": 13, "image264.png": 13, "image265.png": 13, "image266.png": 13, "image267.png": 13, "image268.png": 13, "image269.png": 13, "image270.png": 13, "image271.png": 13, "image272.png": 13, "image273.png": 13, "image274.png": 13, "image275.png": 13, "image276.png": 13, "image277.png": 13, "image278.png": 14, "image279.png": 14, "image280.png": 14, "image281.png": 14, "image282.png": 14};
+window.CFILES=["chunk_00.js", "chunk_01.js", "chunk_02.js", "chunk_03.js", "chunk_04.js", "chunk_05.js", "chunk_06.js", "chunk_07.js", "chunk_08.js", "chunk_09.js", "chunk_10.js", "chunk_11.js", "chunk_12.js", "chunk_13.js", "chunk_14.js"];
+
+
+// ── STATE ──
+let deck = [...DRUGS];
+let idx = 0, flipped = false;
+let knowSet = new Set(), dunnoSet = new Set();
+let mode = 'n2s';          // 'n2s' = name→struct,  's2n' = struct→name
+let isLight = false;
+let loadedChunks = new Set();
+const HAS_CAT = true;
+
+// ── THEME ──
+function toggleTheme() {
+  isLight = !isLight;
+  document.body.classList.toggle('light', isLight);
+  document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
+  document.getElementById('themeColor').content = isLight ? '#f0f2f8' : '#0f1117';
+}
+
+// ── MODE ──
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeN').classList.toggle('on', m === 'n2s');
+  document.getElementById('modeS').classList.toggle('on', m === 's2n');
+  flipped = false;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+// ── IMAGE LOADING ──
+function getImg(imgName) {
+  return window.__C__ && window.__C__[imgName]
+    ? 'data:image/png;base64,' + window.__C__[imgName] : null;
+}
+function loadChunk(ci) {
+  if (loadedChunks.has(ci)) return Promise.resolve();
+  loadedChunks.add(ci);
+  return new Promise(res => {
+    const s = document.createElement('script');
+    s.src = CFILES[ci]; s.onload = res; s.onerror = res;
+    document.head.appendChild(s);
+  });
+}
+function preloadNext() {
+  const next = deck[idx + 1];
+  if (next) loadChunk(CMAP[next.image] ?? 0);
+}
+
+// ── RENDER ──
+async function render() {
+  // Hide result if showing
+  const result = document.getElementById('result');
+  
+  if (idx >= deck.length) { showResult(); return; }
+
+  const d = deck[idx];
+  flipped = false;
+  document.getElementById('card').classList.remove('flipped');
+
+  // Update front
+  const front = document.getElementById('front');
+  const fHint = document.getElementById('fHint');
+
+  if (mode === 'n2s') {
+    // Front = name, Back = structure
+    front.classList.remove('img-mode');
+    document.getElementById('fText').textContent = d.name;
+    fHint.textContent = '点击查看结构式 →';
+    // Back: show spinner, load image
+    document.getElementById('bImg').style.display = 'none';
+    document.getElementById('bSpin').style.display = 'block';
+    document.getElementById('bName').style.display = 'none';
+    if (HAS_CAT) document.getElementById('bCat').style.display = 'none';
+    // load image for back
+    const ci = CMAP[d.image] ?? 0;
+    await loadChunk(ci);
+    const src = getImg(d.image);
+    if (src) {
+      document.getElementById('bImg').src = src;
+      document.getElementById('bImg').style.display = 'block';
+      document.getElementById('bSpin').style.display = 'none';
+    }
+    document.getElementById('bName').textContent = d.name;
+    document.getElementById('bName').style.display = 'block';
+    if (HAS_CAT && document.getElementById('bCat')) {
+      document.getElementById('bCat').textContent = d.category;
+      document.getElementById('bCat').style.display = 'block';
+    }
+  } else {
+    // Front = structure image, Back = name
+    front.classList.add('img-mode');
+    fHint.textContent = '点击查看药名 →';
+    document.getElementById('fImg').src = '';
+    // load image for front
+    const ci = CMAP[d.image] ?? 0;
+    await loadChunk(ci);
+    const src = getImg(d.image);
+    if (src) document.getElementById('fImg').src = src;
+    // Back: name only
+    document.getElementById('bImg').style.display = 'none';
+    document.getElementById('bSpin').style.display = 'none';
+    document.getElementById('bName').textContent = d.name;
+    document.getElementById('bName').style.display = 'block';
+    if (HAS_CAT && document.getElementById('bCat')) {
+      document.getElementById('bCat').textContent = d.category;
+      document.getElementById('bCat').style.display = 'block';
+    }
+  }
+
+  // Cat pill + number
+  if (HAS_CAT) document.getElementById('fCat').textContent = d.category ?? '';
+  document.getElementById('fNum').textContent = (idx+1) + '/' + deck.length;
+
+  updateStats();
+  preloadNext();
+}
+
+function updateStats() {
+  const done = Math.min(idx, deck.length);
+  document.getElementById('stP').textContent = done + '/' + deck.length;
+  document.getElementById('stK').textContent = knowSet.size;
+  document.getElementById('stD').textContent = dunnoSet.size;
+  document.getElementById('pf').style.width = (deck.length > 0 ? done/deck.length*100 : 0) + '%';
+}
+
+// ── CONTROLS ──
+function flipCard() {
+  flipped = !flipped;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function rate(know) {
+  const d = deck[idx];
+  if (know) { knowSet.add(d.id); dunnoSet.delete(d.id); }
+  else      { dunnoSet.add(d.id); knowSet.delete(d.id); }
+  idx++;
+  render();
+  updateStats();
+}
+
+function go(dir) {
+  if (dir === -1 && idx > 0) idx--;
+  else if (dir === 1 && idx < deck.length) idx++;
+  render();
+}
+
+function shuffle() {
+  for (let i = deck.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]] = [deck[j],deck[i]];
+  }
+  idx = 0; render();
+}
+
+function filterCat() {
+  const cat = document.getElementById('catSel')?.value ?? 'all';
+  deck = cat === 'all' ? [...DRUGS] : DRUGS.filter(d => d.category === cat);
+  knowSet.clear(); dunnoSet.clear(); idx = 0; render();
+}
+
+// ── RESULT ──
+function showResult() {
+  const total = deck.length, know = knowSet.size, dunno = dunnoSet.size;
+  const pct = total > 0 ? Math.round(know/total*100) : 0;
+  document.getElementById('rPct').textContent = pct + '%';
+  document.getElementById('rK').textContent = know;
+  document.getElementById('rD').textContent = dunno;
+  document.getElementById('rT').textContent = total;
+  const ring = document.getElementById('rRing');
+  ring.style.borderColor = pct>=80?'var(--gr)':pct>=50?'var(--yw)':'var(--rd)';
+  document.getElementById('result').classList.add('show');
+}
+
+function closeResult() {
+  document.getElementById('result').classList.remove('show');
+  // Loop back to start without resetting scores
+  idx = 0;
+  render();
+}
+
+function restart(dunnoOnly) {
+  if (dunnoOnly && dunnoSet.size > 0) {
+    const ids = [...dunnoSet];
+    deck = deck.filter(d => ids.includes(d.id));
+  }
+  knowSet.clear(); dunnoSet.clear(); idx = 0;
+  document.getElementById('result').classList.remove('show');
+  render();
+}
+
+// ── SWIPE ──
+let tx0=0,ty0=0;
+const scene = document.querySelector('.scene');
+scene.addEventListener('touchstart', e=>{tx0=e.touches[0].clientX;ty0=e.touches[0].clientY;},{passive:true});
+scene.addEventListener('touchend', e=>{
+  const dx=e.changedTouches[0].clientX-tx0, dy=Math.abs(e.changedTouches[0].clientY-ty0);
+  if(Math.abs(dx)>60&&dy<40){ dx<0?rate(true):rate(false); }
+},{passive:true});
+
+render();
+</script>
+</body>
+</html>
